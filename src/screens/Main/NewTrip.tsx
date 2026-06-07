@@ -91,7 +91,7 @@ export const NewTrip = () => {
       });
 
       Alert.alert('Sucesso', 'Nova viagem iniciada com sucesso!', [
-        { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
+        { text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'Dashboard' }) }
       ]);
     } catch (error: any) {
       const message = error.response?.data?.mensagem || 'Falha ao criar viagem.';
@@ -148,7 +148,7 @@ export const NewTrip = () => {
             placeholder="Ex: 1"
             keyboardType="numeric"
             value={idVeiculo}
-            onChangeText={setIdVeiculo}
+            onChangeText={(v) => setIdVeiculo(v.replace(/\D/g, ''))}
           />
 
           <View style={{ height: 16 }} />
@@ -159,7 +159,7 @@ export const NewTrip = () => {
             placeholder="Ex: 1"
             keyboardType="numeric"
             value={idCliente}
-            onChangeText={setIdCliente}
+            onChangeText={(v) => setIdCliente(v.replace(/\D/g, ''))}
           />
 
           <View style={{ height: 16 }} />
@@ -170,7 +170,7 @@ export const NewTrip = () => {
             placeholder="Ex: 1800"
             keyboardType="numeric"
             value={kmTotal}
-            onChangeText={setKmTotal}
+            onChangeText={(v) => setKmTotal(v.replace(/\D/g, ''))}
           />
         </Form>
 

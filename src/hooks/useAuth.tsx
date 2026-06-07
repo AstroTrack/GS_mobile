@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { setApiToken } from '../services/api';
 
 interface User {
   id: number;
@@ -30,6 +31,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       const storageToken = await AsyncStorage.getItem('@AstroTrack:token');
 
       if (storageUser && storageToken) {
+        setApiToken(storageToken);
         setUser(JSON.parse(storageUser));
       }
       setLoading(false);
@@ -39,6 +41,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   }, []);
 
   async function signIn(token: string, user: User) {
+    setApiToken(token);
     await AsyncStorage.setItem('@AstroTrack:token', token);
     await AsyncStorage.setItem('@AstroTrack:user', JSON.stringify(user));
     setUser(user);

@@ -10,7 +10,7 @@ const api = axios.create({
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem('@AstroTrack:token');
-    if (token) {
+    if (token && !config.headers.Authorization) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     
@@ -21,6 +21,10 @@ api.interceptors.request.use(
     return Promise.reject(error);
   }
 );
+
+export const setApiToken = (token: string) => {
+  api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+};
 
 api.interceptors.response.use(
   (response) => {

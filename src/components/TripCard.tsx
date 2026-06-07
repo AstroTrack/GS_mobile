@@ -7,6 +7,7 @@ interface TripProps {
   data: string;
   status: 'EM_ANDAMENTO' | 'FINALIZADA' | 'PLANEJADA' | 'CANCELADA' | string;
   onPress?: () => void;
+  onLongPress?: () => void;
 }
 
 const Container = styled.TouchableOpacity`
@@ -69,11 +70,11 @@ const StatusText = styled.Text<{ status: string }>`
   }};
 `;
 
-export const TripCard = ({ destino, data, status = 'PLANEJADA', onPress }: TripProps) => {
+export const TripCard = ({ destino, data, status = 'PLANEJADA', onPress, onLongPress }: TripProps) => {
   const displayStatus = status || 'PLANEJADA';
   
   return (
-    <Container activeOpacity={0.7} onPress={onPress}>
+    <Container activeOpacity={0.7} onPress={onPress} onLongPress={onLongPress}>
       <Info>
         <Destination numberOfLines={1}>{destino}</Destination>
         

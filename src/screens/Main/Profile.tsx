@@ -201,6 +201,15 @@ export const Profile = () => {
   const handleUpdateProfile = async () => {
     if (!user?.id) return;
 
+    const { nome, cpf, cnh, telefone } = editData;
+    if (!nome || !cpf || !cnh || !telefone) {
+      return Alert.alert('Erro de Validação', 'Todos os campos são obrigatórios.');
+    }
+
+    if (cpf.length !== 11 || cnh.length !== 11) {
+      return Alert.alert('Erro de Validação', 'CPF e CNH devem ter 11 dígitos.');
+    }
+
     setLoading(true);
     try {
       // Se o ID foi alterado manualmente, atualiza no estado global primeiro
@@ -370,27 +379,28 @@ export const Profile = () => {
                   />
                   
                   <Input
-                    label="Telefone"
+                    label="Telefone (apenas números)"
                     icon={Smartphone}
                     value={editData.telefone}
-                    onChangeText={(v) => setEditData({ ...editData, telefone: v })}
+                    onChangeText={(v) => setEditData({ ...editData, telefone: v.replace(/\D/g, '') })}
                     keyboardType="phone-pad"
+                    maxLength={11}
                   />
 
                   <Input
-                    label="CPF"
+                    label="CPF (apenas números)"
                     icon={CreditCard}
                     value={editData.cpf}
-                    onChangeText={(v) => setEditData({ ...editData, cpf: v })}
+                    onChangeText={(v) => setEditData({ ...editData, cpf: v.replace(/\D/g, '') })}
                     keyboardType="numeric"
                     maxLength={11}
                   />
 
                   <Input
-                    label="CNH"
+                    label="CNH (apenas números)"
                     icon={CreditCard}
                     value={editData.cnh}
-                    onChangeText={(v) => setEditData({ ...editData, cnh: v })}
+                    onChangeText={(v) => setEditData({ ...editData, cnh: v.replace(/\D/g, '') })}
                     keyboardType="numeric"
                     maxLength={11}
                   />

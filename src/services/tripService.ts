@@ -34,6 +34,11 @@ export const tripService = {
     return response.data;
   },
 
+  deleteTrip: async (id: number) => {
+    const response = await api.delete(`/viagens/${id}`);
+    return response.data;
+  },
+
   finishTrip: async (id: number, currentTrip: Trip) => {
     // A API Java exige que dataFim >= dataInicio
     const now = new Date();

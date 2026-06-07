@@ -208,7 +208,7 @@ export const CheckIn = () => {
             try {
               await tripService.finishTrip(idViagem, trip);
               Alert.alert('Sucesso', 'Viagem finalizada com sucesso!', [
-                { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
+                { text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'Dashboard' }) }
               ]);
             } catch (error: any) {
               const message = error.response?.data?.mensagem || 'Falha ao finalizar viagem.';
@@ -236,7 +236,7 @@ export const CheckIn = () => {
             try {
               await tripService.deleteTrip(idViagem);
               Alert.alert('Sucesso', 'Viagem excluída.', [
-                { text: 'OK', onPress: () => navigation.navigate('Dashboard') }
+                { text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'Dashboard' }) }
               ]);
             } catch (error: any) {
               Alert.alert('Erro', 'Falha ao excluir viagem.');

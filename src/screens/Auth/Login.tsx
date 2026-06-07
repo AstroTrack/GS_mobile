@@ -6,6 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
 import { driverService } from '../../services/driverService';
+import { setApiToken } from '../../services/api';
 import { Rocket } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
@@ -57,37 +58,76 @@ export const Login = () => {
       
       const token = response.token || response.jwt;
       
+      if (token) {
+        setApiToken(token);
+      }
+      
       // Tenta extrair o ID do motorista de várias formas comuns
       let driverId = response.idMotorista || 
                      response.user?.idMotorista || 
                      response.motorista?.idMotorista || 
+                     response.id_motorista ||
+                     response.user?.id_motorista ||
                      response.motoristaId || 
                      response.id || 
-                       response.user?.id;
+                     response.user?.id;
 
-      // DISCOVERY LOGIC: Se o ID não veio no login, tenta buscar na lista de motoristas por e-mail
+      // DISCOVERY LOGIC: Se o ID não veio no login, tenta buscar na lista de motoristas por e-mail ou nome
       if (!driverId) {
         console.log('[Login] ID não encontrado. Iniciando auto-descoberta...');
         try {
           const allDrivers = await driverService.listAll();
-          const found = allDrivers.find((d: any) => 
-            d.email?.toLowerCase() === email.toLowerCase() || 
-            d.nome?.toLowerCase() === response.usuario?.usuario?.toLowerCase()
+          
+          // Tenta encontrar por e-mail primeiro (mais seguro)
+          const userEmail = email.toLowerCase().trim();
+          let found = allDrivers.find((d: any) => 
+            (d.email && d.email.toLowerCase().trim() === userEmail) ||
+            (d.usuario && d.usuario.email && d.usuario.email.toLowerCase().trim() === userEmail)
           );
+
+          // Se não achou por e-mail, tenta por nome (agressivo)
+          if (!found) {
+            const normalize = (str: string) => {
+              return str
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, "") // Remove acentos
+                .replace(/\s+(de|da|do|dos|das)\s+/g, " ") // Remove preposições
+                .replace(/[^a-z0-9]/g, "") // Remove tudo que não for letra ou número
+                .trim();
+            };
+
+            const loginUserName = normalize(response.usuario?.usuario || response.nome || '');
+            console.log(`[Login] Nome Normalizado (Auth): "${loginUserName}"`);
+
+            found = allDrivers.find((d: any) => {
+              const driverName = normalize(d.nome || '');
+              const isMatch = driverName === loginUserName || driverName.includes(loginUserName) || loginUserName.includes(driverName);
+              if (isMatch) console.log(`[Login] Match encontrado! "${driverName}" corresponde a "${loginUserName}"`);
+              return isMatch;
+            });
+          }
           
           if (found) {
-            driverId = found.idMotorista || found.id;
+            driverId = found.idMotorista || found.id_motorista || found.id;
             console.log(`[Login] ID descoberto na lista: ${driverId}`);
+          } else {
+            console.log('[Login] Nenhum motorista correspondente encontrado na lista.', JSON.stringify(allDrivers));
           }
         } catch (discoveryError) {
           console.error('[Login] Falha na auto-descoberta:', discoveryError);
         }
       }
 
-      console.log(`[Login] ID Identificado Final: ${driverId} (Fallback: 1)`);
+      console.log(`[Login] ID Identificado Final: ${driverId}`);
+
+      if (!driverId) {
+        setLoading(false);
+        return Alert.alert('Erro de Perfil', 'Não foi possível localizar o seu ID de motorista. Entre em contato com o suporte.');
+      }
 
       const user = {
-        id: driverId || 1,
+        id: driverId,
         nome: response.nome || response.user?.nome || 'Motorista Astro',
         email: response.email || response.user?.email || email,
         cpf: response.cpf || response.user?.cpf || '',

@@ -1,5 +1,5 @@
 import React, { useState, useCallback } from 'react';
-import { FlatList, View, ActivityIndicator, Text, TouchableOpacity, RefreshControl, ScrollView } from 'react-native';
+import { FlatList, View, ActivityIndicator, Text, TouchableOpacity, RefreshControl, ScrollView, Alert } from 'react-native';
 import styled from 'styled-components/native';
 import { tripService } from '../../services/tripService';
 import { TripCard } from '../../components/TripCard';
@@ -99,6 +99,30 @@ export const History = () => {
     applyFilters(trips, activeFilter, text);
   };
 
+  const handleDeleteTrip = (id: number, destino: string) => {
+    Alert.alert(
+      'Excluir Viagem',
+      `Deseja realmente excluir a viagem para ${destino}?`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { 
+          text: 'Excluir', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await tripService.deleteTrip(id);
+              Alert.alert('Sucesso', 'Viagem excluída com sucesso.');
+              fetchTrips();
+            } catch (error) {
+              console.error('Erro ao excluir viagem:', error);
+              Alert.alert('Erro', 'Não foi possível excluir a viagem.');
+            }
+          }
+        }
+      ]
+    );
+  };
+
   const onRefresh = () => {
     setRefreshing(true);
     fetchTrips();
@@ -162,6 +186,7 @@ export const History = () => {
                   idViagem: item.idViagem || item.id, 
                   destino: item.destino 
                 })}
+                onLongPress={() => handleDeleteTrip(item.idViagem || item.id, item.destino)}
               />
             </MotiView>
           )}
