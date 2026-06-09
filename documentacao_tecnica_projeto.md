@@ -5,17 +5,19 @@ O **AstroTrack** é uma plataforma de gerenciamento logístico e monitoramento p
 
 
 ## 2. Arquitetura e Estrutura de Pastas
-O projeto utiliza **React Native com Expo** (Managed Workflow) e **TypeScript**. A organização segue uma separação clara de responsabilidades:
+O projeto utiliza **React Native com Expo** (Managed Workflow) e **TypeScript**. A organização segue uma separação clara de responsabilidades seguindo princípios de **Clean Architecture**:
 
 - `/src/components`: Componentes de UI atômicos e reutilizáveis (Input, Button, TripCard).
-- `/src/hooks`: Hooks customizados para gerenciamento de lógica global (ex: `useAuth` para autenticação).
+- `/src/hooks`: Camada de Controle/Hooks que centraliza a lógica de negócio e o gerenciamento de estado:
+    - `useAuth`: Gerenciamento de sessão e autenticação.
+    - `useTrips`: Operações de viagens (CRUD, filtros, contagem e ações de check-in).
+    - `useLocation`: Abstração para permissões de GPS e captura de coordenadas.
+    - `useProfile`: Gerenciamento de dados do motorista e sincronização de perfil.
 - `/src/navigation`: Configuração das rotas e fluxos de navegação.
-- `/src/screens`: Telas divididas por contexto:
-    - `/Auth`: Fluxo de Login e Registro.
-    - `/Main`: Funcionalidades principais (Dashboard, CheckIn, History, NewTrip, Profile, Status).
-- `/src/services`: Camada de abstração para chamadas de API (Axios).
-- `/src/theme`: Definições de cores, fontes e estilos globais (Styled Components).
-- `/src/utils`: Funções auxiliares (ex: lógica para capturar URL da API dependendo do ambiente).
+- `/src/screens`: Camada de View simplificada, responsável apenas pela interface e interação do usuário.
+- `/src/services`: Camada de infraestrutura para chamadas de API (Axios).
+- `/src/theme`: Definições de estilos globais e contrato de tipagem para o TypeScript (`styled.d.ts`).
+- `/src/utils`: Funções auxiliares.
 
 ## 3. Stack Tecnológica e Bibliotecas Principais
 As escolhas técnicas visam performance, manutenibilidade e uma experiência de usuário rica:
@@ -27,6 +29,7 @@ As escolhas técnicas visam performance, manutenibilidade e uma experiência de 
 - **Lucide React Native**: Conjunto de ícones consistentes e modernos.
 - **Expo Location**: Utilizado para captura de coordenadas em tempo real durante o Check-in.
 - **Async Storage**: Persistência local de dados (token de autenticação e dados do usuário).
+- **TypeScript**: Utilizado em todo o projeto com contratos de tipagem forte, incluindo definições para o tema global do Styled Components.
 
 ## 4. Fluxo de Navegação
 O aplicativo implementa uma navegação condicional baseada no estado de autenticação:
@@ -46,19 +49,21 @@ O aplicativo implementa uma navegação condicional baseada no estado de autenti
 A comunicação é centralizada na pasta `src/services`:
 
 - **api.ts**: Configura a instância global do Axios. Detecta dinamicamente se deve usar `localhost` ou o IP da rede (útil para testes em dispositivos físicos).
-- **driverService.ts**: Endpoints de autenticação (`/auth/login`) e cadastro (`/drivers`).
+- **driverService.ts**: Autenticação, cadastro e lógica de auto-descoberta de ID de motorista baseada em e-mail/nome.
 - **tripService.ts**: Operações de CRUD de viagens (`/trips`) e registros de check-in (`/trips/{id}/checkins`).
 
 ### Padrão de Autenticação
 - Utiliza **Bearer Token (JWT)**.
 - O token é armazenado no `AsyncStorage` e injetado automaticamente nos headers de cada requisição via interceptors no `api.ts`.
 
-## 6. Funcionalidades e Lógica de Negócio
-- **Gestão de Viagens**: Criação de novas rotas, listagem de viagens ativas/concluídas e opção de exclusão.
-- **Check-In e Geoposicionamento**: Durante uma viagem, o motorista registra sua posição. O app captura Latitude/Longitude e envia ao backend.
-- **Botão de Pânico**: Integrado na tela de Check-In para alertas imediatos de segurança.
-- **Monitoramento de Status**: Uma tela dedicada para simular/verificar a conexão com satélites e a saúde de dispositivos ESP32, simulando telemetria IoT.
-- **Persistência de Sessão**: Ao abrir o app, o `useAuth` verifica se existe um token válido, permitindo o login automático.
+## 6. Lógica de Negócio e Hooks Customizados
+O projeto extrai a complexidade das telas para Hooks especializados, garantindo que as Views permaneçam limpas:
+
+- **Desacoplamento das Views**: As telas em `src/screens` não chamam serviços diretamente. Elas utilizam os Hooks, que por sua vez orquestram as chamadas aos serviços e gerenciam o estado necessário.
+- **Filtragem e Processamento**: Lógicas como o filtro de histórico de viagens e a contagem de status para o Dashboard são processadas dentro do `useTrips` utilizando `useMemo`.
+- **Gestão de Localização**: O hook `useLocation` centraliza a interação com o hardware de GPS, fornecendo um estado consistente de coordenadas.
+- **Sincronização de Perfil**: O `useProfile` garante que alterações no ID do motorista sejam sincronizadas entre o backend e o estado global de autenticação.
+- **Auto-descoberta de Perfil**: O `driverService` inclui lógica de contingência para identificar o ID do motorista durante o login caso o backend retorne dados parciais.
 
 ## 7. Observações para o Backend
 - O frontend espera que as datas sejam retornadas no padrão ISO 8601.

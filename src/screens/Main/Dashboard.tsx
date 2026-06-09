@@ -1,27 +1,18 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import { FlatList, View, ActivityIndicator, Text, TouchableOpacity, RefreshControl, ScrollView } from 'react-native';
+import React, { useCallback } from 'react';
+import { View, Text, TouchableOpacity, RefreshControl, ScrollView } from 'react-native';
 import styled from 'styled-components/native';
 import { useAuth } from '../../hooks/useAuth';
-import { tripService } from '../../services/tripService';
+import { useTrips } from '../../hooks/useTrips';
 import { TripCard } from '../../components/TripCard';
-import { LogOut, User, Plus, Satellite } from 'lucide-react-native';
+import { User, Plus, Satellite } from 'lucide-react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
-import { MotiView, MotiText } from 'moti';
+import { MotiView } from 'moti';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const Container = styled(SafeAreaView)`
   flex: 1;
   background-color: ${({ theme }) => theme.COLORS.PRIMARY};
-`;
-
-const ActiveTripContainer = styled.View`
-  background-color: #FB850020;
-  margin: 24px;
-  padding: 16px;
-  border-radius: 12px;
-  border-left-width: 4px;
-  border-left-color: #FB8500;
 `;
 
 const ActiveTripTitle = styled.Text`
@@ -49,18 +40,6 @@ const WelcomeText = styled.Text`
   font-size: 20px;
   font-weight: bold;
   margin-left: 12px;
-`;
-
-const ListHeader = styled.Text`
-  color: ${({ theme }) => theme.COLORS.TEXT_PRIMARY};
-  font-size: 18px;
-  font-weight: bold;
-  margin-horizontal: 24px;
-  margin-bottom: 16px;
-`;
-
-const LogoutButton = styled.TouchableOpacity`
-  padding: 8px;
 `;
 
 const FAB = styled.TouchableOpacity`
@@ -108,38 +87,23 @@ const SummaryLabel = styled.Text`
 `;
 
 export const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigation = useNavigation<any>();
-  const [trips, setTrips] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-
-  const fetchTrips = async () => {
-    try {
-      const data = await tripService.listRecent();
-      setTrips(data || []);
-    } catch (error) {
-      console.error('Failed to fetch trips:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const { 
+    activeTrip, 
+    stats, 
+    refreshing, 
+    fetchTrips, 
+    refreshTrips 
+  } = useTrips();
 
   useFocusEffect(
     useCallback(() => {
       fetchTrips();
-    }, [])
+    }, [fetchTrips])
   );
 
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchTrips();
-  };
-
-  const activeTrip = trips.find(t => t.status === 'EM_ANDAMENTO');
-  const finishedCount = trips.filter(t => t.status === 'FINALIZADA').length;
-  const plannedCount = trips.filter(t => t.status === 'PLANEJADA' || t.status === 'AGENDADA').length;
+  const { finishedCount, plannedCount } = stats;
 
   return (
     <Container>
@@ -163,7 +127,7 @@ export const Dashboard = () => {
             }}
             transition={{ loop: refreshing, duration: 1000, type: 'timing' }}
           >
-            <TouchableOpacity onPress={onRefresh} style={{ padding: 8 }}>
+            <TouchableOpacity onPress={refreshTrips} style={{ padding: 8 }}>
               <Satellite color="#FB8500" size={20} />
             </TouchableOpacity>
           </MotiView>
@@ -172,7 +136,7 @@ export const Dashboard = () => {
 
       <ScrollView 
         refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FB8500" />
+          <RefreshControl refreshing={refreshing} onRefresh={refreshTrips} tintColor="#FB8500" />
         }
       >
         <SummaryContainer>

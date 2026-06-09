@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Alert, View, ScrollView } from 'react-native';
+import { Alert, View } from 'react-native';
 import styled from 'styled-components/native';
 import { useNavigation } from '@react-navigation/native';
-import { ArrowLeft, MapPin, Calendar, Navigation, Truck, User as UserIcon, Building, Hash } from 'lucide-react-native';
+import { ArrowLeft, MapPin, Calendar, Navigation, Truck, Building, Hash } from 'lucide-react-native';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
-import { tripService } from '../../services/tripService';
+import { useTrips } from '../../hooks/useTrips';
 import { useAuth } from '../../hooks/useAuth';
 
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -55,6 +55,7 @@ const Label = styled.Text`
 export const NewTrip = () => {
   const navigation = useNavigation<any>();
   const { user } = useAuth();
+  const { createTrip } = useTrips();
   
   const [origem, setOrigem] = useState('');
   const [destino, setDestino] = useState('');
@@ -72,14 +73,13 @@ export const NewTrip = () => {
 
     setLoading(true);
     try {
-      // Formata para LocalDateTime esperado pelo Spring
       const now = new Date();
       const timeStr = now.toTimeString().split(' ')[0]; // HH:mm:ss
       const formattedDataInicio = `${dataInicio}T${timeStr}`;
 
       if (!user?.id) throw new Error("Usuário não identificado");
 
-      await tripService.createTrip({
+      await createTrip({
         origem,
         destino,
         dataInicio: formattedDataInicio,
@@ -184,5 +184,3 @@ export const NewTrip = () => {
     </Container>
   );
 };
-
-const Text = styled.Text``;

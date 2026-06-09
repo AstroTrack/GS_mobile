@@ -1,20 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  ActivityIndicator, 
-  Alert, 
-  TouchableOpacity, 
-  Modal, 
-  KeyboardAvoidingView, 
-  Platform, 
-  TouchableWithoutFeedback, 
-  Keyboard,
-  ScrollView
-} from 'react-native';
+import { View, Text, ActivityIndicator, Alert, TouchableOpacity, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard,ScrollView } from 'react-native';
 import styled from 'styled-components/native';
 import { useAuth } from '../../hooks/useAuth';
-import { driverService } from '../../services/driverService';
+import { useProfile } from '../../hooks/useProfile';
 import { Hash, User, Mail, Smartphone, CreditCard, LogOut, ArrowLeft, Edit2, X } from 'lucide-react-native';
 import { useNavigation } from '@react-navigation/native';
 import { MotiView } from 'moti';
@@ -148,10 +136,10 @@ const DragIndicator = styled.View`
 `;
 
 export const Profile = () => {
-  const { user, signOut, updateUserId } = useAuth();
+  const { user, signOut } = useAuth();
+  const { profile, loading, fetchProfile, updateProfile } = useProfile();
+  
   const navigation = useNavigation();
-  const [profile, setProfile] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [editData, setEditData] = useState({ 
     idMotorista: 0,
@@ -162,46 +150,35 @@ export const Profile = () => {
     status: 'ATIVO'
   });
 
-  const fetchProfile = async () => {
-    if (!user?.id) return;
-    
-    try {
-      const data = await driverService.getProfile(user.id);
-      setProfile(data);
-      setEditData({ 
-        idMotorista: data.idMotorista || user.id,
-        nome: data.nome, 
-        telefone: data.telefone || '',
-        cpf: data.cpf,
-        cnh: data.cnh,
-        status: data.status || 'ATIVO'
-      });
-    } catch (error: any) {
-      console.error('Falha ao carregar perfil:', error);
-      
-      // Se for 404, o motorista não existe com esse ID no backend
-      if (error.response?.status === 404) {
-        Alert.alert(
-          'Perfil não encontrado',
-          `Não conseguimos localizar o motorista com ID ${user.id}. Se você já tem um cadastro, altere o ID no botão de edição.`,
-          [{ text: 'OK' }]
-        );
-      }
-      
-      setProfile(user);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
-    fetchProfile();
-  }, [user?.id]);
+    const loadProfile = async () => {
+      try {
+        const data = await fetchProfile();
+        if (data) {
+          setEditData({ 
+            idMotorista: data.idMotorista || user?.id,
+            nome: data.nome, 
+            telefone: data.telefone || '',
+            cpf: data.cpf,
+            cnh: data.cnh,
+            status: data.status || 'ATIVO'
+          });
+        }
+      } catch (error: any) {
+        if (error.response?.status === 404) {
+          Alert.alert(
+            'Perfil não encontrado',
+            `Não conseguimos localizar o motorista com ID ${user?.id}. Se você já tem um cadastro, altere o ID no botão de edição.`,
+            [{ text: 'OK' }]
+          );
+        }
+      }
+    };
+    loadProfile();
+  }, [fetchProfile, user?.id]);
 
   const handleUpdateProfile = async () => {
-    if (!user?.id) return;
-
-    const { nome, cpf, cnh, telefone } = editData;
+    const { idMotorista, nome, cpf, cnh, telefone } = editData;
     if (!nome || !cpf || !cnh || !telefone) {
       return Alert.alert('Erro de Validação', 'Todos os campos são obrigatórios.');
     }
@@ -210,24 +187,9 @@ export const Profile = () => {
       return Alert.alert('Erro de Validação', 'CPF e CNH devem ter 11 dígitos.');
     }
 
-    setLoading(true);
     try {
-      // Se o ID foi alterado manualmente, atualiza no estado global primeiro
-      if (editData.idMotorista !== user.id) {
-        await updateUserId(Number(editData.idMotorista));
-      }
-
-      // Força o ID correto e garante que CPF/CNH sejam strings
-      const payload = {
-        ...editData,
-        idMotorista: Number(editData.idMotorista),
-        cpf: String(editData.cpf),
-        cnh: String(editData.cnh)
-      };
-
-      await driverService.updateProfile(Number(editData.idMotorista), payload);
+      await updateProfile(Number(idMotorista), editData);
       setIsModalVisible(false);
-      await fetchProfile();
       Alert.alert('Sucesso', 'Perfil atualizado com sucesso!');
     } catch (error: any) {
       console.error('Falha ao atualizar perfil:', error);
@@ -237,7 +199,6 @@ export const Profile = () => {
       let errorMessage = 'Falha ao atualizar perfil.';
       
       if (fieldErrors) {
-        // Pega o primeiro erro de campo encontrado (ex: CPF inválido)
         const firstField = Object.keys(fieldErrors)[0];
         errorMessage = fieldErrors[firstField];
       } else if (apiMessage) {
@@ -245,8 +206,6 @@ export const Profile = () => {
       }
 
       Alert.alert('Erro de Validação', errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 

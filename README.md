@@ -1,19 +1,12 @@
 # AstroTrack - Logistics in Orbit
 
-![Expo](https://img.shields.io/badge/expo-FB8500?style=for-the-badge&logo=expo&logoColor=white)
-![React Native](https://img.shields.io/badge/React_Native-0B132B?style=for-the-badge&logo=react&logoColor=61DAFB)
-![Styled Components](https://img.shields.io/badge/styled--components-FB8500?style=for-the-badge&logo=styled-components&logoColor=white)
-![TypeScript](https://img.shields.io/badge/TypeScript-0B132B?style=for-the-badge&logo=typescript&logoColor=white)
+![Expo|66](https://img.shields.io/badge/expo-FB8500?style=for-the-badge&logo=expo&logoColor=white)![React Native](https://img.shields.io/badge/React_Native-0B132B?style=for-the-badge&logo=react&logoColor=61DAFB)![Styled Components](https://img.shields.io/badge/styled--components-FB8500?style=for-the-badge&logo=styled-components&logoColor=white)![TypeScript](https://img.shields.io/badge/TypeScript-0B132B?style=for-the-badge&logo=typescript&logoColor=white)
 
-
+---
 O **AstroTrack** é uma solução mobile avançada para gestão logística e monitoramento de transporte de cargas. Projetado para motoristas modernos, o sistema combina rastreamento em tempo real, segurança (botão de pânico) e gestão de viagens em uma interface intuitiva com temática espacial ("Space Logistics"), garantindo eficiência e segurança "além da órbita".
-
-
 ## Visão Geral
-
 ### Objetivo
 Otimizar a comunicação entre motoristas e a central logística, fornecendo ferramentas de rastreamento geográfico, registro de eventos de viagem e suporte emergencial imediato.
-
 ### Principais Funcionalidades
 - **Autenticação Segura:** Cadastro e login com persistência de sessão e descoberta automática de perfil.
 - **Gestão de Viagens:** Criação, acompanhamento e histórico detalhado de fretes.
@@ -21,14 +14,10 @@ Otimizar a comunicação entre motoristas e a central logística, fornecendo fer
 - **Botão de Pânico:** Alerta imediato para situações de risco (acidente, roubo, quebra).
 - **Perfil Profissional:** Gestão de documentos (CPF, CNH) e sincronização de ID com o backend.
 - **Dashboard Dinâmico:** Visualização rápida da viagem atual e estatísticas.
-
 ### Casos de Uso
 1. **Motorista Autônomo:** Inicia uma viagem, registra paradas para descanso e finaliza a entrega com confirmação.
 2. **Emergência:** Em caso de sinistro, o motorista aciona o botão de pânico para alertar a central com sua localização exata.
-
-
 ##  Arquitetura
-
 A aplicação foi construída sobre o ecossistema **Expo**, utilizando uma arquitetura modular focada em escalabilidade e manutenção.
 
 ### Componentes de Arquitetura
@@ -37,67 +26,17 @@ A aplicação foi construída sobre o ecossistema **Expo**, utilizando uma arqui
 - **Navigation:** React Navigation (Tabs e Stacks) para fluidez de telas.
 - **Styling:** CSS-in-JS com Styled Components para isolamento visual e temas dinâmicos.
 
-### Diagrama de Arquitetura
-```mermaid
-graph TD
-    A[App.tsx] --> B[AuthProvider]
-    B --> C[Navigation Container]
-    C --> D{Autenticado?}
-    D -- Sim --> E[Main Tabs]
-    D -- Não --> F[Auth Stack]
-    
-    E --> G[Dashboard]
-    E --> H[Nova Viagem]
-    E --> I[Histórico]
-    E --> J[Perfil]
-    
-    F --> K[Login]
-    F --> L[Registro]
-    
-    subgraph Services
-        S1[api.ts]
-        S2[driverService.ts]
-        S3[tripService.ts]
-    end
-    
-    G & H & I & J & K & L --> Services
-```
-
-### Fluxograma de Funcionamento
-```mermaid
-sequenceDiagram
-    participant M as Motorista
-    participant A as AstroTrack App
-    participant B as Backend API
-    
-    M->>A: Faz Login/Registro
-    A->>B: POST /auth/login
-    B-->>A: Token JWT + User Data
-    A->>B: GET /motoristas/{id}
-    B-->>A: Perfil Completo
-    A->>M: Dashboard Liberado
-    M->>A: Inicia Nova Viagem
-    A->>B: POST /viagens
-    M->>A: Realiza Check-in
-    A->>B: POST /checkins (Coord + Status)
-    M->>A: Finaliza Viagem
-    A->>B: PUT /viagens/{id}
-```
-
----
-
 ## Tecnologias
 
-| Tecnologia | Finalidade |
-| :--- | :--- |
+| Tecnologia              | Finalidade                                   |
+| :---------------------- | :------------------------------------------- |
 | **React Native (Expo)** | Desenvolvimento Cross-platform (Android/iOS) |
-| **TypeScript** | Tipagem estática e segurança de código |
-| **Styled Components** | Estilização avançada e temas |
-| **Axios** | Cliente HTTP para integração com API |
-| **Lucide React Native** | Biblioteca de ícones modernos |
-| **Moti / Reanimated** | Animações fluídas e interativas |
-| **Async Storage** | Persistência local de dados |
-
+| **TypeScript**          | Tipagem estática e segurança de código       |
+| **Styled Components**   | Estilização avançada e temas                 |
+| **Axios**               | Cliente HTTP para integração com API         |
+| **Lucide React Native** | Biblioteca de ícones modernos                |
+| **Moti / Reanimated**   | Animações fluídas e interativas              |
+| **Async Storage**       | Persistência local de dados                  |
 
 ## Estrutura do Projeto
 
@@ -117,7 +56,6 @@ sequenceDiagram
 ```
 
 ---
-
 ## Integração com Backend
 
 A aplicação consome uma API RESTful projetada para suporte logístico.
@@ -127,7 +65,6 @@ A aplicação consome uma API RESTful projetada para suporte logístico.
 - **Motorista:** Dados profissionais (CNH, CPF, Telefone).
 - **Viagem:** Registro de origem, destino, KM e status.
 - **Check-in:** Registro de localização temporal e status da carga.
-
 ### APIs e Endpoints
 
 | Método | Endpoint | Descrição |
@@ -182,17 +119,9 @@ A aplicação consome uma API RESTful projetada para suporte logístico.
 - **Erro de Rede (CORS/IP):** Certifique-se de que o backend está rodando no mesmo segmento de rede do seu celular ao usar Expo Go.
 - **CPF/CNH Inválido:** O sistema remove acentos e símbolos automaticamente. Insira apenas números.
 
-
-## Roadmap
-
-- [ ] Suporte a Offline (Registro de check-ins sem internet).
-- [ ] Integração nativa com Google Maps para rotas.
-- [ ] Upload de fotos de canhotos/comprovantes de entrega.
-- [ ] Dark/Light mode dinâmico.
-
-
 ## Vídeo Demonstração
-[Youtube]() - Demonstração
+- Demonstração -> [Google Drive](https://drive.google.com/file/d/1TYPzuOVcwTCbX2mOTT1iOP40QPAhFAj5/view)
+> **Observação**: Devido à presença de dados sensíveis e pessoais no vídeo (mesmo que fictícios), não foi possível publicá-lo no YouTube.
 
 ## Autores
 Artur Correia - [GitHub](https://github.com/artcorreia)

@@ -100,7 +100,7 @@ export const Status = () => {
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setSignalStrength(Math.floor(Math.random() * 2) + 3); // Oscila entre 3 e 4 barras
+      setSignalStrength(Math.floor(Math.random() * 2) + 3); // Oscila entre 3 e 4 barras. (Rafa)
     }, 5000);
     return () => clearInterval(interval);
   }, []);

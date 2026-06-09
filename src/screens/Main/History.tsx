@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react';
-import { FlatList, View, ActivityIndicator, Text, TouchableOpacity, RefreshControl, ScrollView, Alert } from 'react-native';
+import React, { useCallback } from 'react';
+import { FlatList, View, ActivityIndicator, Text, RefreshControl, ScrollView, Alert } from 'react-native';
 import styled from 'styled-components/native';
-import { tripService } from '../../services/tripService';
+import { useTrips } from '../../hooks/useTrips';
 import { TripCard } from '../../components/TripCard';
-import { History as HistoryIcon, Search, Filter } from 'lucide-react-native';
+import { Search } from 'lucide-react-native';
 import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { MotiView } from 'moti';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,12 +24,6 @@ const Title = styled.Text`
   font-weight: bold;
 `;
 
-const FilterContainer = styled.View`
-  flex-direction: row;
-  padding-horizontal: 24px;
-  margin-bottom: 16px;
-`;
-
 const FilterChip = styled.TouchableOpacity<{ active: boolean }>`
   padding-horizontal: 16px;
   padding-vertical: 8px;
@@ -46,58 +40,24 @@ const FilterText = styled.Text<{ active: boolean }>`
 
 export const History = () => {
   const navigation = useNavigation<any>();
-  const [trips, setTrips] = useState<any[]>([]);
-  const [filteredTrips, setFilteredTrips] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('TODOS');
-  const [searchText, setSearchText] = useState('');
-
-  const fetchTrips = async () => {
-    try {
-      const data = await tripService.listRecent();
-      setTrips(data || []);
-      applyFilters(data || [], activeFilter, searchText);
-    } catch (error) {
-      console.error('Failed to fetch trips:', error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  };
+  const {
+    filteredTrips,
+    loading,
+    refreshing,
+    activeFilter,
+    searchText,
+    setActiveFilter,
+    setSearchText,
+    fetchTrips,
+    refreshTrips,
+    deleteTrip
+  } = useTrips();
 
   useFocusEffect(
     useCallback(() => {
       fetchTrips();
-    }, [])
+    }, [fetchTrips])
   );
-
-  const applyFilters = (data: any[], filter: string, search: string) => {
-    let result = data;
-    
-    if (filter !== 'TODOS') {
-      result = result.filter(t => t.status === filter);
-    }
-
-    if (search) {
-      result = result.filter(t => 
-        t.destino.toLowerCase().includes(search.toLowerCase()) || 
-        t.origem.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    setFilteredTrips(result);
-  };
-
-  const handleFilterChange = (filter: string) => {
-    setActiveFilter(filter);
-    applyFilters(trips, filter, searchText);
-  };
-
-  const handleSearch = (text: string) => {
-    setSearchText(text);
-    applyFilters(trips, activeFilter, text);
-  };
 
   const handleDeleteTrip = (id: number, destino: string) => {
     Alert.alert(
@@ -110,9 +70,8 @@ export const History = () => {
           style: 'destructive',
           onPress: async () => {
             try {
-              await tripService.deleteTrip(id);
+              await deleteTrip(id);
               Alert.alert('Sucesso', 'Viagem excluída com sucesso.');
-              fetchTrips();
             } catch (error) {
               console.error('Erro ao excluir viagem:', error);
               Alert.alert('Erro', 'Não foi possível excluir a viagem.');
@@ -121,11 +80,6 @@ export const History = () => {
         }
       ]
     );
-  };
-
-  const onRefresh = () => {
-    setRefreshing(true);
-    fetchTrips();
   };
 
   return (
@@ -139,7 +93,7 @@ export const History = () => {
           placeholder="Buscar por destino ou origem..." 
           icon={Search}
           value={searchText}
-          onChangeText={handleSearch}
+          onChangeText={setSearchText}
         />
       </View>
 
@@ -153,7 +107,7 @@ export const History = () => {
             <FilterChip 
               key={f} 
               active={activeFilter === f} 
-              onPress={() => handleFilterChange(f)}
+              onPress={() => setActiveFilter(f)}
             >
               <FilterText active={activeFilter === f}>
                 {f.replace('_', ' ')}
@@ -163,14 +117,14 @@ export const History = () => {
         </ScrollView>
       </View>
 
-      {loading ? (
+      {loading && !refreshing ? (
         <ActivityIndicator color="#FB8500" style={{ flex: 1 }} />
       ) : (
         <FlatList
           data={filteredTrips}
           keyExtractor={(item, index) => String(item.idViagem || item.id || index)}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FB8500" />
+            <RefreshControl refreshing={refreshing} onRefresh={refreshTrips} tintColor="#FB8500" />
           }
           renderItem={({ item, index }) => (
             <MotiView

@@ -40,12 +40,10 @@ export const tripService = {
   },
 
   finishTrip: async (id: number, currentTrip: Trip) => {
-    // A API Java exige que dataFim >= dataInicio
     const now = new Date();
     const startDate = new Date(currentTrip.dataInicio);
     
-    // Se a hora atual for anterior à data de início (por fuso horário ou erro manual), 
-    // define o fim como 1 minuto após o início para garantir a validade lógica.
+    // Se a hora atual for anterior à data de início (por fuso horário ou erro manual), define o fim como 1 minuto após o início para garantir a validade lógica. (Rafa)
     const finalDate = now > startDate ? now : new Date(startDate.getTime() + 60000);
     
     const response = await api.put(`/viagens/${id}`, {

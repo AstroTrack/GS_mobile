@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
-import { Alert, View, ScrollView, Text, TouchableOpacity, Modal } from 'react-native';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Alert, View, Text, TouchableOpacity, Modal } from 'react-native';
 import styled from 'styled-components/native';
 import { useNavigation, useRoute } from '@react-navigation/native';
-import * as Location from 'expo-location';
+import { useLocation } from '../../hooks/useLocation';
+import { useTrips } from '../../hooks/useTrips';
 import { Button } from '../../components/Button';
 import { Input } from '../../components/Input';
-import { tripService } from '../../services/tripService';
 import { ShieldAlert, ArrowLeft, MapPin, CheckCircle, Trash2, Edit3 } from 'lucide-react-native';
 import { MotiView } from 'moti';
 
@@ -64,24 +64,6 @@ const DestinoText = styled.Text`
   font-size: 16px;
 `;
 
-const PanicButton = styled.TouchableOpacity`
-  background-color: #E5393520;
-  border-width: 1px;
-  border-color: #E53935;
-  border-radius: 8px;
-  padding: 16px;
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-  margin-top: 24px;
-`;
-
-const PanicText = styled.Text`
-  color: #E53935;
-  font-weight: bold;
-  margin-left: 8px;
-`;
-
 const LocationStatus = styled.View`
   flex-direction: row;
   align-items: center;
@@ -128,9 +110,10 @@ export const CheckIn = () => {
   const route = useRoute();
   const { idViagem, destino: initialDestino } = route.params as { idViagem: number, destino: string };
 
+  const { coords, errorMsg: locationError } = useLocation();
+  const { getTripById, checkIn, finishTrip, deleteTrip, updateTrip } = useTrips();
+
   const [loading, setLoading] = useState(false);
-  const [location, setLocation] = useState<Location.LocationObject | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [destino, setDestino] = useState(initialDestino);
   const [trip, setTrip] = useState<any>(null);
   const [isEditModalVisible, setIsEditModalVisible] = useState(false);
@@ -139,40 +122,32 @@ export const CheckIn = () => {
   useEffect(() => {
     async function fetchTripDetails() {
       try {
-        const data = await tripService.getById(idViagem);
+        const data = await getTripById(idViagem);
         setTrip(data);
-        if (data.destino) setDestino(data.destino);
+        if (data.destino) {
+          setDestino(data.destino);
+          setNewDestino(data.destino);
+        }
       } catch (error) {
         console.error('Erro ao buscar detalhes da viagem:', error);
       }
     }
     fetchTripDetails();
-
-    (async () => {
-      let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permissão de localização negada');
-        return;
-      }
-
-      let currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation(currentLocation);
-    })();
-  }, []);
+  }, [idViagem]);
 
   const handleCheckIn = async (panic = false) => {
-    if (!location && !panic) {
+    if (!coords && !panic) {
       return Alert.alert('Localização', 'Aguardando obter sua localização atual...');
     }
 
     setLoading(true);
     try {
-      const coords = location?.coords || { latitude: 0, longitude: 0 };
+      const locationCoords = coords || { latitude: 0, longitude: 0 };
       
-      await tripService.checkIn({
+      await checkIn({
         idViagem,
-        latitude: coords.latitude,
-        longitude: coords.longitude,
+        latitude: locationCoords.latitude,
+        longitude: locationCoords.longitude,
         dataRegistro: new Date().toISOString().split('.')[0],
         botaoPanico: panic,
         portaAberta: false
@@ -206,7 +181,7 @@ export const CheckIn = () => {
           onPress: async () => {
             setLoading(true);
             try {
-              await tripService.finishTrip(idViagem, trip);
+              await finishTrip(idViagem, trip);
               Alert.alert('Sucesso', 'Viagem finalizada com sucesso!', [
                 { text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'Dashboard' }) }
               ]);
@@ -234,7 +209,7 @@ export const CheckIn = () => {
           onPress: async () => {
             setLoading(true);
             try {
-              await tripService.deleteTrip(idViagem);
+              await deleteTrip(idViagem);
               Alert.alert('Sucesso', 'Viagem excluída.', [
                 { text: 'OK', onPress: () => navigation.navigate('Main', { screen: 'Dashboard' }) }
               ]);
@@ -255,9 +230,9 @@ export const CheckIn = () => {
     setLoading(true);
     try {
       const updatedTrip = { ...trip, destino: newDestino };
-      await tripService.updateTrip(idViagem, updatedTrip);
+      await updateTrip(idViagem, updatedTrip);
       setDestino(newDestino);
-      setTrip(updatedTrip); // Atualiza o estado local com os novos dados
+      setTrip(updatedTrip);
       setIsEditModalVisible(false);
       Alert.alert('Sucesso', 'Destino atualizado!');
     } catch (error: any) {
@@ -292,7 +267,7 @@ export const CheckIn = () => {
           <DestinoText>{destino}</DestinoText>
         </TripInfo>
 
-        {location ? (
+        {coords ? (
           <MotiView
             from={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -307,7 +282,7 @@ export const CheckIn = () => {
         ) : (
           <View style={{ marginBottom: 24, padding: 12, backgroundColor: '#6C757D20', borderRadius: 8 }}>
             <Text style={{ color: '#6C757D', textAlign: 'center' }}>
-              {errorMsg || 'Sincronizando com satélites...'}
+              {locationError || 'Sincronizando com satélites...'}
             </Text>
           </View>
         )}
@@ -316,7 +291,7 @@ export const CheckIn = () => {
           title="REGISTRAR CHECK-IN" 
           onPress={() => handleCheckIn(false)}
           loading={loading}
-          disabled={!location}
+          disabled={!coords}
         />
 
         <ActionRow>
